@@ -1,6 +1,6 @@
 {
   "name": "@bitovi/snapshot-test",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Visual snapshot testing for everyone",
   "homepage": "https://github.com/bitovi/snapshot-test",
   "repository": {
