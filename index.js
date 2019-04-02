@@ -10,15 +10,14 @@ export function getXYChoord(data, index) {
 	return [
 		index % (data.width * 4),
 		Math.floor(index / (data.width * 4))
-
-	]
+	];
 }
 export function ave(num1, num2) {
-	return Math.floor((num1+num2) / 2 )
+	return Math.floor((num1+num2) / 2 );
 }
 export function getPixel(data, x, y) {
 	var index = getIndex(data, x, y);
-	return data.data.slice(index, index+4)
+	return data.data.slice(index, index+4);
 }
 export function pixelEqual(p1, p2) {
 	return p1[0] === p2[0] && p1[1] === p2[1] && p1[2] === p2[2] && p1[3] === p2[3];
@@ -31,7 +30,6 @@ var tempCtx = tempCanvas.getContext("2d");
 export function resizeCanvas(canvas, scale) {
 	var cw = tempCanvas.width = canvas.width;
 	var ch = tempCanvas.height = canvas.height;
-
 
 	tempCtx.drawImage(canvas,0,0);
 
@@ -96,7 +94,9 @@ export function dataEqual(data1, data2) {
 
 
 
-export function diff(newImage, oldImage, options) {
+export function diff(newImage, oldImage, pixelMatchOptions) {
+
+	pixelMatchOptions = pixelMatchOptions || {threshold: 0.0};
 
 	var maxWidth = Math.max(newImage.width, oldImage.width),
 		maxHeight = Math.max(newImage.height, oldImage.height);
@@ -110,7 +110,7 @@ export function diff(newImage, oldImage, options) {
 	canvas.width = maxWidth;
 	canvas.height = maxHeight;
 
-	var mismatched = pixelmatch(newImage.data, oldImage.data, diffOut.data, maxWidth, maxHeight, {threshold: 0})
+	var mismatched = pixelmatch(newImage.data, oldImage.data, diffOut.data, maxWidth, maxHeight, pixelMatchOptions);
 
 	if( mismatched ){
 		ctx.putImageData(diffOut, 0, 0);
@@ -160,7 +160,7 @@ export function basicDiff(newImage, oldImage) {
 		}
 	}
 	if(equal) {
-		return
+		return;
 	} else {
 		ctx.putImageData(diffOut, 0, 0);
 		return canvas;
@@ -171,7 +171,7 @@ export function downloadLink(canvas, title, text) {
 	var anchor = document.createElement("a");
 	anchor.setAttribute("download", title);
 	var url = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-	//console.log(url);
+
 	anchor.setAttribute("href", url );
 	anchor.textContent = text;
 	return anchor;
@@ -184,8 +184,7 @@ function makeBoxForCanvas(canvas, title) {
 	div.style.verticalAlign = "text-top";
 	var paragraph = document.createElement("p");
 	paragraph.textContent = title;
-	div.appendChild(paragraph)
-
+	div.appendChild(paragraph);
 	div.appendChild(canvas);
 	return div;
 }
@@ -204,7 +203,6 @@ export function diffContent(diffCanvas, newCanvas, oldCanvas, imageName, attempt
 	var width = Math.floor( getWidth() / 3 ) - 50;
 
 	// get links
-	var newCanvasDownload = downloadLink(newCanvas,imageName, "download new "+imageName);
 
 	var diffSized = stretchToWidth(diffCanvas, width);
 	var newSized = stretchToWidth(newCanvas, width);
@@ -257,14 +255,14 @@ export function compareToSnapshot(options) {
 		var next = downloadLink(iframeCanvas,imageName, imageName);
 		//console.log("lastLink", localStorage.getItem("initial") === next.getAttribute("href") );
 
-		var diffCanvas = diff(iframeCanvas, imageCanvas);
+		var diffCanvas = diff(iframeCanvas, imageCanvas, options.pixelMatchOptions);
 		if(diffCanvas) {
 			return Promise.reject({
 				html: diffContent(diffCanvas, iframeCanvas, imageCanvas, imageName, results[1].attempts),
 				imageName: imageName
 			});
 		} else {
-			return {imageName: imageName}
+			return {imageName: imageName};
 		}
 	}, function(err){
 		return htmlPromise.then(function(iframeCanvas){
@@ -283,10 +281,10 @@ export function compareToSnapshot(options) {
 			return Promise.reject({
 				attempts: err.attempts,
 				html: p
-			})
-		})
+			});
+		});
 
-	})
+	});
 }
 
 
@@ -305,31 +303,28 @@ export function findImage(options){
 	var base = Promise.reject();
 
 	attempts.forEach(function(name){
-		base = base.catch(function(err){
+		base = base.catch(function(){
 			return getCanvasForImage(options.snapshotDir+name).then(function(canvas){
-				return {canvas: canvas, name: name, attempts: attempts}
-			})
-		})
+				return {canvas: canvas, name: name, attempts: attempts};
+			});
+		});
 	});
 
 	return base.catch(function(){
 		return Promise.reject({
 			attempts: attempts
-		})
+		});
 	});
 }
 
-
-
-
 // ## Helpers that get canvases
-export function getCanvasForUrl(url) {
+export function getCanvasForUrl(options) {
 	return new Promise(function(resolve, reject){
 		var div = document.createElement("div");
 		div.style.position = "fixed";
-		div.style.top = div.style.left = "-1000px"
+		div.style.top = div.style.left = "-1000px";
 		div.style.height = "400px";
-		div.style.width = "1000px";
+		div.style.width = (options.width || 1000)+"px";
 		document.body.appendChild(div);
 		//var fixture = document.getElementById("qunit-fixture");
 
@@ -337,7 +332,7 @@ export function getCanvasForUrl(url) {
 		iframe.style.width = "100%";
 		iframe.style.height = "100%";
 		iframe.style.backgroundColor = "white";
-		iframe.src = url;
+		iframe.src = options.url;
 		iframe.onload = function(){
 			console.log("load");
 			setTimeout(function(){
@@ -345,8 +340,8 @@ export function getCanvasForUrl(url) {
 					allowTaint: true,
 					foreignObjectRendering: true,
 					useCORS: true,
-					windowWidth: 1000,
-					width: 1000,
+					windowWidth: options.width,
+					width: options.width,
 					devicePixelRatio: 1
 				})
 					.then(resolve, reject).then(function(){
@@ -356,11 +351,11 @@ export function getCanvasForUrl(url) {
 
 					});
 
-			},13)
+			},13);
 
-		}
+		};
 		div.appendChild(iframe);
-	})
+	});
 
 }
 
@@ -379,7 +374,7 @@ export function getCanvasForImage(url) {
 
 			context.drawImage(image, 0, 0);
 			resolve(canvas);
-		}
+		};
 		image.onerror = reject;
 
 		image.src = url;

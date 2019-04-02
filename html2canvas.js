@@ -36,8 +36,9 @@ var html2canvas = function html2canvas(element, conf) {
         scrollX: defaultView.pageXOffset,
         scrollY: defaultView.pageYOffset
     };
+	var fn = (0, _Window.renderElement);
 
-    var result = (0, _Window.renderElement)(element, _extends({}, defaultOptions, config), logger);
+    var result = fn(element, _extends({}, defaultOptions, config), logger);
 
     if (process.env.NODE_ENV !== 'production') {
         return result.catch(function (e) {
