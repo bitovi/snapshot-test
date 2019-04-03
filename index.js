@@ -243,9 +243,9 @@ function ulForAttempts(attempts, canvas) {
  */
 export function compareToSnapshot(options) {
 
-	var htmlPromise = getCanvasForUrl(options.url);
+	var htmlPromise = getCanvasForUrl(options);
 	return Promise.all([
-		getCanvasForUrl(options.url),
+		htmlPromise,
 		findImage(options)
 	]).then(function(results){
 		var iframeCanvas = results[0];
@@ -322,8 +322,8 @@ export function getCanvasForUrl(options) {
 	return new Promise(function(resolve, reject){
 		var div = document.createElement("div");
 		div.style.position = "fixed";
-		div.style.top = div.style.left = "-1000px";
-		div.style.height = "400px";
+		div.style.top = div.style.left = "0px";
+		div.style.height = (options.height || 1000) +"px";
 		div.style.width = (options.width || 1000)+"px";
 		document.body.appendChild(div);
 		//var fixture = document.getElementById("qunit-fixture");
@@ -333,26 +333,32 @@ export function getCanvasForUrl(options) {
 		iframe.style.height = "100%";
 		iframe.style.backgroundColor = "white";
 		iframe.src = options.url;
+
+		function takeSnapshot(){
+			html2canvas(iframe.contentWindow.document.body, {
+				allowTaint: true,
+				foreignObjectRendering: true,
+				useCORS: true,
+				windowWidth: options.width,
+				width: options.width,
+				devicePixelRatio: 1
+			})
+				.then(resolve, reject).then(function(){
+					setTimeout(function(){
+						document.body.removeChild(div);
+					},13);
+
+				});
+		}
+
 		iframe.onload = function(){
-			console.log("load");
 			setTimeout(function(){
-				html2canvas(iframe.contentWindow.document.body, {
-					allowTaint: true,
-					foreignObjectRendering: true,
-					useCORS: true,
-					windowWidth: options.width,
-					width: options.width,
-					devicePixelRatio: 1
-				})
-					.then(resolve, reject).then(function(){
-						setTimeout(function(){
-							document.body.removeChild(div);
-						},13);
-
-					});
-
+				if(options.prepareDocument) {
+					options.prepareDocument(iframe).then(takeSnapshot)
+				} else {
+					takeSnapshot();
+				}
 			},13);
-
 		};
 		div.appendChild(iframe);
 	});
