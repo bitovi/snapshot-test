@@ -354,7 +354,7 @@ export function getCanvasForUrl(options) {
 		iframe.onload = function(){
 			setTimeout(function(){
 				if(options.prepareDocument) {
-					options.prepareDocument(iframe).then(takeSnapshot)
+					options.prepareDocument(iframe).then(takeSnapshot);
 				} else {
 					takeSnapshot();
 				}
